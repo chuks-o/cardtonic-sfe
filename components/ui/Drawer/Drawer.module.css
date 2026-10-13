@@ -1,8 +1,20 @@
+/* Entering eases out (fast start, gentle landing); leaving is a little quicker and eases in. */
+.overlay,
+.panel {
+  --drawer-enter: 260ms var(--ease-out);
+  --drawer-exit: 200ms cubic-bezier(0.4, 0, 1, 1);
+}
+
 .overlay {
   position: fixed;
   inset: 0;
   z-index: 50;
   background: var(--color-overlay);
+  animation: fade-in var(--drawer-enter) both;
+}
+
+.overlay[data-state='closed'] {
+  animation: fade-out var(--drawer-exit) both;
 }
 
 .panel {
@@ -17,6 +29,11 @@
   max-width: 100%;
   background: var(--color-surface);
   box-shadow: var(--shadow-overlay);
+  animation: slide-in-right var(--drawer-enter) both;
+}
+
+.panel[data-state='closed'] {
+  animation: slide-out-right var(--drawer-exit) both;
 }
 
 /* Focus lands on the panel itself when it opens; the title announces it. */
@@ -78,6 +95,11 @@
     width: 100%;
     max-height: 90dvh;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    animation-name: slide-in-up;
+  }
+
+  .panel[data-state='closed'] {
+    animation-name: slide-out-down;
   }
 
   .handle {
@@ -95,5 +117,50 @@
 
   .body {
     padding: var(--space-5);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes slide-out-down {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* No sliding for people who ask for less motion; a near-instant fade still fires animationend. */
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .panel {
+    --drawer-enter: 1ms linear;
+    --drawer-exit: 1ms linear;
   }
 }

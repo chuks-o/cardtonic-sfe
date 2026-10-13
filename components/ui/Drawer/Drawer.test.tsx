@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { Drawer } from './Drawer'
@@ -46,7 +46,9 @@ describe('Drawer', () => {
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByRole('button', { name: 'Open' })).toHaveFocus()
-    expect(document.body.style.overflow).toBe('')
+    // Scroll stays locked until the panel has finished sliding out.
+    expect(document.body.style.overflow).toBe('hidden')
+    await waitFor(() => expect(document.body.style.overflow).toBe(''))
   })
 
   it('does not close when clicking inside the panel', async () => {
@@ -81,5 +83,41 @@ describe('Drawer', () => {
     expect(screen.getByRole('button', { name: 'Copy' })).toHaveFocus()
     await user.tab()
     expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus()
+  })
+
+  it('keeps its last content on screen, inert, while it slides out', async () => {
+    function Selection() {
+      const [selected, setSelected] = useState<string | null>('Body text')
+      return (
+        <Drawer open={selected !== null} title="Transaction details" onClose={() => setSelected(null)}>
+          {selected && <p>{selected}</p>}
+        </Drawer>
+      )
+    }
+    render(<Selection />)
+    await userEvent.keyboard('{Escape}')
+
+    // No longer a dialog, but still on screen with its content while it slides out.
+    expect(screen.queryByRole('dialog')).toBeNull()
+    const panel = document.querySelector('.panel[data-state="closed"]')!
+    expect(panel).toHaveTextContent('Body text')
+    expect(panel).toHaveAttribute('inert')
+
+    // animationend itself can't be simulated: jsdom has no AnimationEvent, so React never listens for it.
+    // The browser path is checked manually; the fallback below covers unmounting.
+  })
+
+  it('unmounts after a fallback delay if animationend never fires', async () => {
+    vi.useFakeTimers()
+    try {
+      render(<Harness />)
+      act(() => screen.getByRole('button', { name: 'Open' }).click())
+      act(() => screen.getByRole('button', { name: 'Close' }).click())
+      expect(document.querySelector('.panel')).not.toBeNull()
+      act(() => vi.advanceTimersByTime(400))
+      expect(document.querySelector('.panel')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

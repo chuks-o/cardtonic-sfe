@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useId, useRef, useSyncExternalStore, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '../Icon'
 import styles from './Drawer.module.css'
@@ -15,34 +15,85 @@ export interface DrawerProps {
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
+/** Upper bound on the exit animation, in case animationend never fires (reduced motion, background tab). */
+const EXIT_FALLBACK_MS = 400
+
 const noopSubscribe = () => () => {}
 
-/** Modal side panel; a bottom sheet under 640px. */
-export function Drawer({ open, ...props }: DrawerProps) {
+/** Modal side panel; a bottom sheet under 640px. Animates in and out. */
+export function Drawer({ open, title, onClose, children, footer }: DrawerProps) {
   // Portals need document, which only exists after hydration.
   const isClient = useSyncExternalStore(
     noopSubscribe,
     () => true,
     () => false
   )
-  if (!open || !isClient) return null
-  return createPortal(<DrawerPanel {...props} />, document.body)
+
+  // Stay mounted after `open` turns false until the exit animation has played.
+  const [isRendered, setIsRendered] = useState(open)
+  if (open && !isRendered) setIsRendered(true)
+  const isClosing = isRendered && !open
+
+  // Callers usually render `{selected && …}`, which is empty once closed; keep showing the last content
+  // while the panel slides out.
+  const [content, setContent] = useState({ children, footer })
+  if (open && (content.children !== children || content.footer !== footer)) setContent({ children, footer })
+
+  useEffect(() => {
+    if (!isClosing) return
+    const timer = setTimeout(() => setIsRendered(false), EXIT_FALLBACK_MS)
+    return () => clearTimeout(timer)
+  }, [isClosing])
+
+  if (!isRendered || !isClient) return null
+  return createPortal(
+    <DrawerPanel
+      title={title}
+      onClose={onClose}
+      isClosing={isClosing}
+      onExited={() => setIsRendered(false)}
+      footer={content.footer}
+    >
+      {content.children}
+    </DrawerPanel>,
+    document.body
+  )
 }
 
-function DrawerPanel({ title, onClose, children, footer }: Omit<DrawerProps, 'open'>) {
+interface DrawerPanelProps extends Omit<DrawerProps, 'open'> {
+  isClosing: boolean
+  onExited: () => void
+}
+
+function DrawerPanel({ title, onClose, isClosing, onExited, children, footer }: DrawerPanelProps) {
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
-  // Keep the latest onClose without re-running the mount effect when callers pass an inline function.
+  // Keep the latest onClose without re-running the effect when callers pass an inline function.
   const onCloseRef = useRef(onClose)
   useEffect(() => {
     onCloseRef.current = onClose
   })
 
+  // Scroll lock spans the whole time the panel is on screen, exit animation included: unlocking earlier
+  // brings the page scrollbar back mid-animation and shifts the fixed panel sideways. Padding by the
+  // scrollbar's width stops the page behind from jumping when the scrollbar disappears.
   useEffect(() => {
+    const { overflow, paddingRight } = document.body.style
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+    document.body.style.overflow = 'hidden'
+    if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`
+    return () => {
+      document.body.style.overflow = overflow
+      document.body.style.paddingRight = paddingRight
+    }
+  }, [])
+
+  // Modal behaviour applies while open. It is torn down as soon as closing starts, not after the exit
+  // animation, so focus returns to the trigger immediately.
+  useEffect(() => {
+    if (isClosing) return
     const panel = panelRef.current
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     panel?.focus()
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -69,21 +120,35 @@ function DrawerPanel({ title, onClose, children, footer }: Omit<DrawerProps, 'op
 
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      document.body.style.overflow = previousOverflow
       previouslyFocused?.focus()
     }
-  }, [])
+  }, [isClosing])
+
+  const state = isClosing ? 'closed' : 'open'
 
   return (
     <>
-      <div className={styles.overlay} onClick={onClose} aria-hidden />
+      <div
+        className={styles.overlay}
+        data-state={state}
+        onClick={isClosing ? undefined : onClose}
+        aria-hidden
+      />
       <div
         ref={panelRef}
         className={styles.panel}
-        role="dialog"
-        aria-modal="true"
+        data-state={state}
+        // While sliding out it is no longer a dialog: hidden from assistive tech and not interactive.
+        role={isClosing ? undefined : 'dialog'}
+        aria-modal={isClosing ? undefined : true}
         aria-labelledby={titleId}
+        aria-hidden={isClosing || undefined}
+        inert={isClosing}
         tabIndex={-1}
+        onAnimationEnd={(event) => {
+          // Ignore animations bubbling up from content (e.g. skeleton pulses).
+          if (isClosing && event.target === event.currentTarget) onExited()
+        }}
       >
         <span className={styles.handle} aria-hidden />
         <div className={styles.header}>
