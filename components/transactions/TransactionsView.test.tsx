@@ -129,6 +129,21 @@ describe('TransactionsView', () => {
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
+  it('keeps the previous rows with an inline error when a page change fails', async () => {
+    handler = (url) =>
+      url.searchParams.get('page') === '2'
+        ? { status: 500, body: { error: { code: 'INTERNAL_ERROR', message: 'Oops' } } }
+        : { body: page([tx()], { total: 40, totalPages: 2 }) }
+    renderView()
+    await screen.findByText('Card payment - Netflix')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Page 2' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't update the list")
+    expect(screen.getByText('Card payment - Netflix')).toBeInTheDocument()
+    expect(screen.queryByText("We couldn't load your transactions")).toBeNull()
+  })
+
   it('shows "not found" for an unknown ?tx=, and an error (not "not found") for a 500', async () => {
     handler = (url) =>
       url.pathname === '/api/transactions/nope'
