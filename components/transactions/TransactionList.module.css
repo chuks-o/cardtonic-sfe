@@ -1,0 +1,54 @@
+.list {
+  position: relative;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+/* Previous results stay on screen while the next page or filter loads. */
+.busy {
+  opacity: 0.6;
+}
+
+.busy::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 30%;
+  height: 2px;
+  background: var(--color-primary);
+  animation: progress 1s ease-in-out infinite;
+}
+
+@keyframes progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .busy::before {
+    animation: none;
+    width: 100%;
+  }
+}
+
+.day {
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+@media (max-width: 640px) {
+  .day {
+    padding: var(--space-3) var(--space-4);
+  }
+}

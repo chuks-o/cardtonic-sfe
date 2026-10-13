@@ -1,0 +1,28 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.search {
+  flex: 1 1 320px;
+}
+
+.select {
+  flex: 0 0 180px;
+}
+
+.clear {
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .search {
+    flex-basis: 100%;
+  }
+
+  .select {
+    flex: 1 1 0;
+  }
+}

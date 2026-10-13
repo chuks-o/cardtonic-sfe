@@ -1,6 +1,7 @@
 .row {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto auto;
+  /* Fixed status/amount tracks so badges line up from row to row; amount still grows for outliers. */
+  grid-template-columns: 40px minmax(0, 1fr) 112px minmax(160px, max-content);
   grid-template-areas:
     'lead main status amount'
     'lead main status time';
@@ -53,7 +54,7 @@
 
 .status {
   grid-area: status;
-  margin-right: var(--space-6);
+  justify-self: start;
 }
 
 .amount,
@@ -92,7 +93,6 @@
   .status {
     align-self: start;
     justify-self: end;
-    margin-right: 0;
   }
 
   .time {
