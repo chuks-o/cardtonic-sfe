@@ -1,9 +1,13 @@
 'use client'
+import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
+import type { Transaction } from '@/types/api'
+import { Drawer } from '@/components/ui'
 import { hasFilters } from '@/lib/transactions/params'
-import { PAGE_SIZE, useTransactions } from '@/lib/transactions/queries'
+import { PAGE_SIZE, transactionKey, useTransactions } from '@/lib/transactions/queries'
 import { useTransactionParams } from '@/lib/transactions/useTransactionParams'
 import { Pagination } from './Pagination'
+import { TransactionDetails } from './TransactionDetails'
 import { TransactionFilters } from './TransactionFilters'
 import { TransactionList } from './TransactionList'
 import {
@@ -40,7 +44,8 @@ export function TransactionsFallback() {
 }
 
 export function TransactionsView() {
-  const { params, navigate, setFilters, setPage } = useTransactionParams()
+  const { params, navigate, setFilters, setPage, openTx, closeTx } = useTransactionParams()
+  const queryClient = useQueryClient()
   const { data, isError, isFetching, isPlaceholderData, refetch } = useTransactions(params)
   const isFiltered = hasFilters(params)
 
@@ -60,6 +65,12 @@ export function TransactionsView() {
   const clearFilters = useCallback(() => setFilters(CLEARED, 'push'), [setFilters])
   const retry = () => void refetch()
 
+  // Seed the details cache from the row so the drawer renders instantly instead of flashing a skeleton.
+  const openDetails = (tx: Transaction) => {
+    queryClient.setQueryData(transactionKey(tx.id), { data: tx })
+    openTx(tx.id)
+  }
+
   const total = shown?.meta?.total
   const subtitle =
     total === undefined
@@ -77,7 +88,7 @@ export function TransactionsView() {
     content = (
       <>
         {isError && <InlineError onRetry={retry} isRetrying={isFetching} />}
-        <TransactionList transactions={shown.data} isBusy={isFetching} />
+        <TransactionList transactions={shown.data} isBusy={isFetching} onSelect={openDetails} />
         {shown.meta && (
           <Pagination
             page={shown.meta.page}
@@ -96,6 +107,9 @@ export function TransactionsView() {
       <Header subtitle={subtitle} />
       <TransactionFilters params={params} onChange={setFilters} onClear={clearFilters} />
       <div className={styles.content}>{content}</div>
+      <Drawer open={params.tx !== undefined} title="Transaction details" onClose={closeTx}>
+        {params.tx && <TransactionDetails key={params.tx} id={params.tx} onBack={closeTx} />}
+      </Drawer>
     </div>
   )
 }

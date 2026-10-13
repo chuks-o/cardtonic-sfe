@@ -1,6 +1,6 @@
 'use client'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import {
   parseTransactionParams,
   serializeTransactionParams,
@@ -36,5 +36,26 @@ export function useTransactionParams() {
     [navigate, params]
   )
 
-  return { params, navigate, setFilters, setPage }
+  // Whether this page pushed the current ?tx= entry. If it did, closing goes Back so the history
+  // doesn't fill with open/close pairs. If not (deep link, reload), there is nothing of ours to go back to.
+  const pushedTx = useRef(false)
+
+  const openTx = useCallback(
+    (tx: string) => {
+      pushedTx.current = true
+      navigate({ ...params, tx }, 'push')
+    },
+    [navigate, params]
+  )
+
+  const closeTx = useCallback(() => {
+    if (pushedTx.current) {
+      pushedTx.current = false
+      router.back()
+    } else {
+      navigate({ ...params, tx: undefined }, 'replace')
+    }
+  }, [navigate, params, router])
+
+  return { params, navigate, setFilters, setPage, openTx, closeTx }
 }
