@@ -16,7 +16,10 @@ export function UserMenu() {
   const [user, setUser] = useState<User>()
 
   useEffect(() => {
-    getMe().then((res) => setUser(res.data))
+    getMe()
+      .then((res) => setUser(res.data))
+      // The menu is non-essential: on failure it keeps the placeholder avatar instead of crashing.
+      .catch(() => {})
   }, [])
 
   return (
