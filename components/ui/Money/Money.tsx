@@ -1,9 +1,7 @@
 import type { Currency } from '@/types/api'
 import { cx } from '@/lib/cx'
-import { formatMoney } from '@/lib/format'
+import { formatMoney, formatSignedMoney } from '@/lib/format'
 import styles from './Money.module.css'
-
-const SIGNS = { credit: '+', debit: '−' } as const
 
 export interface MoneyProps {
   /** Minor units. */
@@ -17,8 +15,7 @@ export interface MoneyProps {
 export function Money({ amount, currency, sign, className }: MoneyProps) {
   return (
     <span className={cx(styles.money, className)}>
-      {sign && SIGNS[sign]}
-      {formatMoney(amount, currency)}
+      {sign ? formatSignedMoney(amount, currency, sign) : formatMoney(amount, currency)}
     </span>
   )
 }

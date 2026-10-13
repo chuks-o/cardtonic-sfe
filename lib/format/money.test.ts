@@ -1,4 +1,4 @@
-import { formatMoney, parseMoney } from './money'
+import { formatMoney, formatSignedMoney, parseMoney } from './money'
 
 describe('formatMoney', () => {
   it('formats minor units with two decimals', () => {
@@ -10,6 +10,13 @@ describe('formatMoney', () => {
   it('can always show the sign', () => {
     expect(formatMoney(-4599, 'USD', { signDisplay: 'always' })).toBe('-$45.99')
     expect(formatMoney(2500000, 'NGN', { signDisplay: 'always' })).toBe('+₦25,000.00')
+  })
+})
+
+describe('formatSignedMoney', () => {
+  it('prefixes credits with + and debits with a true minus', () => {
+    expect(formatSignedMoney(2500000, 'NGN', 'credit')).toBe('+₦25,000.00')
+    expect(formatSignedMoney(1549, 'USD', 'debit')).toBe('\u2212$15.49')
   })
 })
 
