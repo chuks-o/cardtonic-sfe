@@ -32,7 +32,7 @@
   color: var(--color-text-inverse);
 }
 
-.primary:hover {
+.primary:hover:not(:disabled) {
   background: var(--color-primary-hover);
 }
 
@@ -42,7 +42,7 @@
   color: var(--color-text);
 }
 
-.secondary:hover {
+.secondary:hover:not(:disabled) {
   background: var(--color-bg-subtle);
 }
 
@@ -51,7 +51,7 @@
   color: var(--color-primary);
 }
 
-.ghost:hover {
+.ghost:hover:not(:disabled) {
   background: var(--color-primary-soft);
 }
 
@@ -59,7 +59,7 @@
   width: 100%;
 }
 
-.disabled {
+.button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

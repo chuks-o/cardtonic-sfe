@@ -33,6 +33,11 @@ export function formatMoney(
   return getFormatter(currency, signDisplay).format(minor / MINOR_UNITS_PER_MAJOR[currency])
 }
 
+/** formatMoney with a leading "+" for credits or a true minus (U+2212) for debits. `minor` is positive. */
+export function formatSignedMoney(minor: number, currency: Currency, direction: 'credit' | 'debit'): string {
+  return `${direction === 'credit' ? '+' : '\u2212'}${formatMoney(minor, currency)}`
+}
+
 /** Parse user input like "1,500.5" into minor units (150050). Returns null if invalid. */
 export function parseMoney(input: string, currency: Currency): number | null {
   const cleaned = input.replace(/,/g, '').trim()

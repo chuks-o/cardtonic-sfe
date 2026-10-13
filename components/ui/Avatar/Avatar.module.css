@@ -20,3 +20,17 @@
   width: 48px;
   height: 48px;
 }
+
+.initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+}
+
+.sm.initials {
+  font-size: var(--text-xs);
+}

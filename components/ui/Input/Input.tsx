@@ -1,6 +1,6 @@
-import type { InputHTMLAttributes, ReactNode } from 'react'
+import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
 import { cx } from '@/lib/cx'
-import { Field } from '../Field'
+import { Field, fieldMessageId } from '../Field'
 import { Icon, type IconName } from '../Icon'
 import styles from './Input.module.css'
 
@@ -21,13 +21,25 @@ export function Input({
   leadingIcon,
   fieldClassName,
   className,
+  id,
   ...rest
 }: InputProps) {
+  const generatedId = useId()
+  const inputId = id ?? generatedId
   return (
-    <Field label={label} hideLabel={hideLabel} hint={hint} error={error} className={fieldClassName}>
+    <Field
+      htmlFor={inputId}
+      label={label}
+      hideLabel={hideLabel}
+      hint={hint}
+      error={error}
+      className={fieldClassName}
+    >
       <div className={styles.control}>
         {leadingIcon && <Icon name={leadingIcon} size={16} className={styles.icon} />}
         <input
+          id={inputId}
+          aria-describedby={error || hint ? fieldMessageId(inputId) : undefined}
           className={cx(styles.input, leadingIcon && styles.withIcon, error && styles.invalid, className)}
           aria-invalid={error ? true : undefined}
           {...rest}
