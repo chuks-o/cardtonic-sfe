@@ -31,7 +31,7 @@ export function TransactionRow({ transaction: tx, onSelect }: TransactionRowProp
       </span>
       <span className={styles.main}>
         <span className={styles.title}>{TRANSACTION_TYPE_LABELS[tx.type]}</span>
-        <span className={styles.narration} dangerouslySetInnerHTML={{ __html: tx.narration }} />
+        <span className={styles.narration}>{tx.narration}</span>
       </span>
       <StatusDot status={tx.status} />
       <span className={styles.end}>
@@ -41,10 +41,7 @@ export function TransactionRow({ transaction: tx, onSelect }: TransactionRowProp
           sign={isCredit ? 'credit' : 'debit'}
           className={isCredit ? styles.credit : styles.amount}
         />
-        <span className={styles.meta}>
-          {formatDateTime(tx.createdAt)}
-          {tx.fee > 0 && ` · Fee ₦${tx.fee}`}
-        </span>
+        <span className={styles.meta}>{formatDateTime(tx.createdAt)}</span>
       </span>
     </button>
   )
