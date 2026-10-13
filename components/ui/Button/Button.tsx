@@ -13,6 +13,7 @@ export interface ButtonProps {
   disabled?: boolean
   onClick?: () => void
   className?: string
+  type?: 'button' | 'submit'
   'aria-label'?: string
 }
 
@@ -26,24 +27,20 @@ export function Button({
   disabled,
   onClick,
   className,
+  type = 'button',
   ...rest
 }: ButtonProps) {
   return (
-    <div
-      className={cx(
-        styles.button,
-        styles[variant],
-        styles[size],
-        fullWidth && styles.fullWidth,
-        disabled && styles.disabled,
-        className
-      )}
-      onClick={disabled ? undefined : onClick}
+    <button
+      type={type}
+      className={cx(styles.button, styles[variant], styles[size], fullWidth && styles.fullWidth, className)}
+      disabled={disabled}
+      onClick={onClick}
       {...rest}
     >
       {iconLeft && <Icon name={iconLeft} size={16} />}
       {children}
       {iconRight && <Icon name={iconRight} size={16} />}
-    </div>
+    </button>
   )
 }
